@@ -1,0 +1,29 @@
+
+
+
+
+
+#include "functions.h"
+void lexer(char *s)
+{
+  int sizeofS = strlen(s);
+  int begOfS = 0;
+  char *a = "";
+  for (int i = 0; i < sizeofS; i++)
+  {
+    if (s[i] == '/' && s[i + 1] == '*')
+    {
+      begOfS = i - 1;
+      i++;
+      while (s[i] != '/')
+      {
+        i++;
+      }
+      a = malloc(i - begOfS -2);
+      strncpy(a, s + (begOfS), i - begOfS +1);
+      printf("%s (comments)\n", a);
+      free(a);
+    }
+  }
+}
+

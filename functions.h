@@ -1,14 +1,12 @@
 /**
- * @file getTokens.h
+ * @file getTokens.c
  * @author Michael J Habermann
- * @brief The header file for getTokens
+ * @brief The function(s) for the get Tokens program
  * @date 2023-09-13
- *
  *
  */
 #pragma once
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-int getTokens(char *s, char ***args);
+void lexer(char *s);
