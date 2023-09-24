@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include "functions.h"
 
-int main(void)
+int main(int argc, char *argv[])
 {
     FILE *fp1;
     char *buffer = 0;
     long length;
-    fp1 = fopen("./files/complex.cci", "rb");
+    fp1 = fopen(argv[argc - 1], "rb");
     if (fp1)
     {
 
@@ -22,5 +22,7 @@ int main(void)
         fclose(fp1);
         //printf("%s\n", buffer);
     }
-   lexer(buffer);
+   lexer(buffer,argv[argc - 1]);
+   free(buffer);
+   return 0;
 }
