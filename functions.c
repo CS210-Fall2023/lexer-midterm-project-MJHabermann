@@ -1,49 +1,220 @@
+/**
+ * @file functions.c
+ * @author Michael J Habermann
+ * @brief These are the functions for the lexer program
+ * @date 2023-09-24
+ *
+ *
+ */
 
 #include "functions.h"
-const char *keywords[39] = {
-    "structure",
-    "procedure",
-    "character",
-    "interface",
-    "constant",
-    "accessor",
-    "positive",
-    "function",
-    "mutator",
-    "integer",
-    "subtype",
-    "natural",
-    "elseif",
-    "module",
-    "return",
-    "struct",
-    "begin",
-    "elsif",
-    "array",
-    "while",
-    "range",
-    "other",
-    "exit",
-    "then",
-    "case",
-    "loop",
-    "type",
-    "when",
-    "else",
-    "null",
-    "bool",
-    "out",
-    "and",
-    "end",
-    "if",
-    "in",
-    "or",
-    "of",
-    "is"};
+const char *keywords[37] = {
+    "procedure", "interface", "character", "accessor", "positive", "constant", "function",
+    "mutator", "natural", "subtype", "integer", "return", "struct", "module",
+    "other", "while", "array", "begin", "elsif", "range", "bool", "case", "null", 
+    "loop", "then", "else", "type", "when", "exit", "and", "end", "out", "is", "of", "or", "if", "in"};
 const char *operators[27] = {":=", "..", "<<", ">>", "<>", "<=", ">=", "**", "!=", "=>", ".", "<", ">", "(", ")", "+", "-", "*", "/", "|", "&", ";", ",", ":", "[", "]", "="};
-
-
-
+/**
+ * @brief Tests for comments by analyzing if there are '/'s
+ *
+ * @param fileName The name of the file we are outputting to
+ * @param s The string we are analyzing
+ * @param counter The counter of where we are at in the string
+ * @return int returns counter
+ */
+int testComments(FILE *fileName, char *s, int counter)
+{
+  if (s[counter] == '/' && s[counter + 1] == '*')
+  {
+    // begOfS = i;
+    fprintf(fileName, "%c", s[counter]);
+    counter++;
+    while (s[counter] != '/')
+    {
+      fprintf(fileName, "%c", s[counter]);
+      counter++;
+    }
+    fprintf(fileName, "%c (comment)\n", s[counter]);
+    counter++;
+  }
+  return counter;
+}
+/**
+ * @brief Tests if there are strings in s
+ *
+ * @param fileName The name of the file we are outputting to
+ * @param s The string we are analyzing
+ * @param counter The counter of where we are at in the string
+ * @return int returns counter
+ */
+int testString(FILE *fileName, char *s, int counter)
+{
+  if (s[counter] == '\"')
+  {
+    // begOfS = i;
+    fprintf(fileName, "%c", s[counter]);
+    counter++;
+    while (s[counter] != '\"')
+    {
+      fprintf(fileName, "%c", s[counter]);
+      counter++;
+    }
+    // i++;
+    fprintf(fileName, "%c (string)\n", s[counter]);
+    counter++;
+  }
+  return counter;
+}
+/**
+ * @brief Tests for keywords in the string s
+ *
+ * @param fileName The name of the file we are outputting to
+ * @param s The string we are analyzing
+ * @param counter The counter of where we are at in the string
+ * @return int returns counter
+ */
+int testKeywords(FILE *fileName, char *s, int counter)
+{
+  int sizeofS = strlen(s);
+  for (int j = 0; j < 37; j++)
+  {
+    char *a;
+    int keyWordLen = strlen(keywords[j]);
+    if (keyWordLen < sizeofS - counter)
+    {
+      a = malloc(keyWordLen);
+      strncpy(a, s + counter, keyWordLen);
+      if (!strcmp(a, keywords[j]) && (s[counter + keyWordLen] == ' ' || s[counter + keyWordLen] == '\n' || s[counter + keyWordLen] == ';' || s[counter + keyWordLen] == ')'))
+      {
+        fprintf(fileName, "%s (keyword)\n", a);
+        counter += keyWordLen;
+      }
+      free(a);
+    }
+  }
+  return counter;
+}
+/**
+ * @brief Tests for possible single characters in the string s
+ *
+ * @param fileName The name of the file we are outputting to
+ * @param s The string we are analyzing
+ * @param counter The counter of where we are at in the string
+ * @return int returns counter
+ */
+int testCharacters(FILE *fileName, char *s, int counter)
+{
+  if (s[counter] == '\'' && s[counter + 2] == '\'')
+  {
+    // begOfS = i;
+    fprintf(fileName, "%c", s[counter]);
+    counter++;
+    fprintf(fileName, "%c", s[counter]);
+    counter++;
+    fprintf(fileName, "%c (character literal)\n", s[counter]);
+  }
+  return counter;
+}
+/**
+ * @brief Tests 27 operators for if the string s has them
+ *
+ * @param fileName The name of the file we are outputting to
+ * @param s The string we are analyzing
+ * @param counter The counter of where we are at in the string
+ * @return int returns counter
+ */
+int operatorTest(FILE *fileName, char *s, int counter)
+{
+  int doubleOperator = 0;
+  // double operator test
+  for (int j = 0; j < 10; j++)
+  {
+    if (s[counter] == operators[j][0] && s[counter + 1] == operators[j][1])
+    {
+      fprintf(fileName, "%c%c (operator)\n", s[counter], s[counter + 1]);
+      counter += 2;
+      doubleOperator = 1;
+    }
+  }
+  // test for comments
+  counter = testComments(fileName, s, counter);
+  // singleOperators test
+  for (int j = 10; j < 27; j++)
+  {
+    if (s[counter] == operators[j][0])
+    {
+      fprintf(fileName, "%c (operator)\n", s[counter]);
+      // i++;
+    }
+  }
+  counter -= doubleOperator;
+  return counter;
+}
+/**
+ * @brief Tests if there are numbers in the function
+ *
+ * @param fileName The name of the file we are outputting to
+ * @param s The string we are analyzing
+ * @param counter The counter of where we are at in the string
+ * @return int returns counter
+ */
+int testNumeric(FILE *fileName, char *s, int counter)
+{
+  if (isdigit(s[counter]) != 0 || s[counter] == '#')
+  {
+    fprintf(fileName, "%c", s[counter]);
+    counter++;
+    if (s[counter] == '.' && isdigit(s[counter + 1]) != 0)
+    {
+      fprintf(fileName, "%c", s[counter]);
+      counter++;
+    }
+    int continueLoop = 1;
+    while (continueLoop == 1)
+    {
+      if (isdigit(s[counter]) != 0 || s[counter] == '#')
+      {
+        fprintf(fileName, "%c", s[counter]);
+        counter++;
+      }
+      else
+        continueLoop = 0;
+    }
+    fprintf(fileName, " (numeric literal)\n");
+    counter--;
+  }
+  return counter;
+}
+/**
+ * @brief Tests for if there are identifiers in the string s
+ *
+ * @param fileName The name of the file we are outputting to
+ * @param s The string we are analyzing
+ * @param counter The counter of where we are at in the string
+ * @return int returns counter
+ */
+int testIdentifier(FILE *fileName, char *s, int counter)
+{
+  if (isalpha(s[counter]) != 0)
+  {
+    fprintf(fileName, "%c", s[counter]);
+    counter++;
+    while (isalpha(s[counter]) != 0 || isdigit(s[counter]) != 0 || s[counter] == '_')
+    {
+      fprintf(fileName, "%c", s[counter]);
+      counter++;
+    }
+    fprintf(fileName, " (identifier)\n");
+    counter--;
+  }
+  return counter;
+}
+/**
+ * @brief This is the lexer, it pulls from all of the other functions to sort through a string and classify the information
+ *
+ * @param s The information it is searching through
+ * @param name The name of the file the user orginally gave
+ */
 void lexer(char *s, char *name)
 {
   char nameOfFile[256] = "";
@@ -51,145 +222,21 @@ void lexer(char *s, char *name)
   strcat(nameOfFile, ".lexer");
   FILE *out_file = fopen(nameOfFile, "w");
   int sizeofS = strlen(s);
-  // int begOfS = 0;
-  // char *a;
-  // char b = s[0];
-  //comments test
   for (int i = 0; i < sizeofS; i++)
   {
-    // b = s[i];
     // test for comments
-    if (s[i] == '/' && s[i + 1] == '*')
-    {
-      // begOfS = i;
-      fprintf(out_file, "%c", s[i]);
-      i++;
-      while (s[i] != '/')
-      {
-        fprintf(out_file, "%c", s[i]);
-        i++;
-      }
-      fprintf(out_file, "%c (comment)\n", s[i]);
-      i++;
-    }
+    i = testComments(out_file, s, i);
     // test for string
-    if (s[i] == '\"')
-    {
-      // begOfS = i;
-      fprintf(out_file, "%c", s[i]);
-      i++;
-      while (s[i] != '\"')
-      {
-        fprintf(out_file, "%c", s[i]);
-        i++;
-      }
-      // i++;
-      fprintf(out_file, "%c (string)\n", s[i]);
-      i++;
-    }
+    i = testString(out_file, s, i);
     // keywords
-    for (int j = 0; j <39; j++)
-    {
-      char *a;
-      int keyWordLen = strlen(keywords[j]);
-      if (keyWordLen < sizeofS - i)
-      {
-        a = malloc(keyWordLen);
-        strncpy(a, s + i, keyWordLen);
-        if (!strcmp(a, keywords[j]) && (s[i+keyWordLen] == ' '|| s[i+keyWordLen] == '\n' ||s[i+keyWordLen] == ';' ||s[i+keyWordLen] == ')'))
-        {
-          fprintf(out_file, "%s (keyword)\n", a);
-          i += keyWordLen;
-        }
-        free(a);
-      }
-    }
+    i = testKeywords(out_file, s, i);
     // character literals
-    if (s[i] == '\'' && s[i+2] == '\'')
-    {
-      // begOfS = i;
-      fprintf(out_file, "%c", s[i]);
-      i++;
-      fprintf(out_file, "%c", s[i]);
-      i++;
-      fprintf(out_file, "%c (character literal)\n", s[i]);
-      //i--;
-    }
+    i = testCharacters(out_file, s, i);
     // doubleoperators test
-    int doubleOperator = 0;
-    for (int j = 0; j < 10; j++)
-    {
-      if(s[i] == operators[j][0] &&s[i+1] == operators[j][1])
-      {
-          fprintf(out_file, "%c%c (operator)\n",s[i],s[i+1]);
-          i +=2;
-          doubleOperator = 1;
-      }
-    }
- // test for comments
-    if (s[i] == '/' && s[i + 1] == '*')
-    {
-      // begOfS = i;
-      fprintf(out_file, "%c", s[i]);
-      i++;
-      while (s[i] != '/')
-      {
-        fprintf(out_file, "%c", s[i]);
-        i++;
-      }
-      fprintf(out_file, "%c (comment)\n", s[i]);
-      i++;
-    }
-    //singleOperators test
-    for(int j = 10; j <27;j++)
-    {
-       if(s[i] == operators[j][0])
-      {
-          fprintf(out_file, "%c (operator)\n",s[i]);
-          //i++;
-      }
-    }
-    i-=doubleOperator;
-    doubleOperator = 0;
+    i = operatorTest(out_file, s, i);
     // numeric literal
-    if (isdigit(s[i]) != 0 || s[i] == '#')
-    {
-      fprintf(out_file, "%c", s[i]);
-      i++;
-      if (s[i] == '.' && isdigit(s[i + 1]) != 0)
-      {
-        fprintf(out_file, "%c", s[i]);
-        i++;
-      }
-      int continueLoop = 1;
-      while (continueLoop == 1)
-      {
-        if (isdigit(s[i]) != 0 || s[i] == '#')
-        {
-          fprintf(out_file, "%c", s[i]);
-          i++;
-        }
-        else
-          continueLoop = 0;
-      }
-      fprintf(out_file, " (numeric literal)\n");
-      i--;
-    }
+    i = testNumeric(out_file, s, i);
     // identifier
-    if (isalpha(s[i]) != 0)
-    {
-      fprintf(out_file, "%c", s[i]);
-      i++;
-      while (isalpha(s[i]) != 0 || isdigit(s[i]) != 0 || s[i] == '_')
-      {
-        fprintf(out_file, "%c", s[i]);
-        i++;
-      }
-      fprintf(out_file, " (identifier)\n");
-      i--;
-    }
+    i = testIdentifier(out_file, s, i);
   }
 }
-
-
-
